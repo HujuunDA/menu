@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>菜单管理后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, sans-serif;
+            background: #1e2a2a;
+            padding: 20px;
+            padding-bottom: 40px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #ffaa66; margin-bottom: 20px; font-size: 28px; }
+        .card {
+            background: #2a3a3a;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h2 { color: #ffcc88; font-size: 18px; margin-bottom: 16px; border-left: 3px solid #ff8844; padding-left: 12px; }
+        .form-row { margin-bottom: 12px; }
+        label { display: block; color: #ddccaa; font-size: 13px; margin-bottom: 5px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 30px;
+            border: none;
+            background: #1e2a2a;
+            color: #ffeedd;
+            font-size: 14px;
+            border: 1px solid #ffaa6644;
+        }
+        button {
+            background: #ff8844;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:active { transform: scale(0.96); }
+        button:disabled {
+            background: #886644;
+            cursor: not-allowed;
+        }
+        .item-list { margin-top: 20px; }
+        .menu-item {
+            background: #1e2a2a;
+            border-radius: 20px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .menu-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #2a3a3a;
+        }
+        .menu-item-info { flex: 1; font-size: 14px; color: #ffddbb; }
+        .menu-item-info strong { color: #ffaa66; }
+        .btn-del {
+            background: #aa4444;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+        .btn-save-all {
+            background: #2c6e2c;
+            padding: 14px;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .note {
+            color: #aaccaa;
+            font-size: 12px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .upload-area {
+            background: #1e2a2a;
+            border: 2px dashed #ffaa66;
+            border-radius: 20px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-area:hover { background: #253535; }
+        .upload-area:active { transform: scale(0.98); }
+        .upload-area.uploading {
+            opacity: 0.6;
+            cursor: wait;
+        }
+        .img-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-top: 8px;
+        }
+        .inline-img {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-clear-img {
+            background: #884444;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .upload-status {
+            font-size: 12px;
+            margin-top: 8px;
+            color: #ffaa66;
+        }
+        .info-note {
+            background: #2a3a2a;
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #ccddcc;
+        }
+        /* 密码框样式 */
+        .login-box {
+            text-align: center;
+            padding: 20px;
+        }
+        .login-box input {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+        .error-msg {
+            color: #ff8866;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="adminContent" style="display: none;">
+<div class="container">
+    <h1>🍢 菜单管理后台</h1>
+    
+    <div class="info-note">
+        🔑 API Key 已内置配置好，无需手动设置<br>
+        📸 点击上传图片 → 自动上传到免费图床 → 自动获取链接
+    </div>
+
+    <div class="card">
+        <h2>➕ 新增菜品</h2>
+        <div class="form-row">
+            <label>菜品名称</label>
+            <input type="text" id="newName" placeholder="例：烤羊肉串">
+        </div>
+        <div class="form-row">
+            <label>价格 (¥)</label>
+            <input type="number" id="newPrice" placeholder="例：5">
+        </div>
+        <div class="form-row">
+            <label>分类</label>
+            <input type="text" id="newCategory" placeholder="例：🔥 招牌烧烤">
+        </div>
+        <div class="form-row">
+            <label>📷 菜品图片（点击上传，自动传图床）</label>
+            <div class="upload-area" id="uploadAreaNew" onclick="uploadNewImage()">
+                📸 点击上传本地图片
+            </div>
+            <div id="newImgPreview" class="inline-img" style="margin-top: 10px; display: none;">
+                <img id="newPreviewImg" class="img-preview">
+                <button class="btn-clear-img" onclick="clearNewImage()">清除图片</button>
+            </div>
+            <div id="newUploadStatus" class="upload-status"></div>
+        </div>
+        <button onclick="addItem()">+ 添加菜品</button>
+    </div>
+
+    <div class="card">
+        <h2>📋 当前菜单列表</h2>
+        <div id="menuList" class="item-list"></div>
+        <button class="btn-save-all" onclick="resetToDefault()">恢复默认菜单</button>
+        <div class="note">⚠️ 修改后自动保存，客户刷新点单页面即可看到新菜单<br>💡 图片自动上传到 ImgBB 免费图床，永久有效</div>
+    </div>
+</div>
+</div>
+
+<div id="loginPanel" class="container">
+<div class="card" style="max-width: 350px; margin: 50px auto;">
+    <h2 style="text-align:center;">🔐 管理后台</h2>
+    <div class="login-box">
+        <input type="password" id="passwordInput" placeholder="请输入密码" style="text-align:center;">
+        <button onclick="checkPassword()">进入后台</button>
+        <div id="loginError" class="error-msg"></div>
+    </div>
+    <div class="note">⚠️ 只有管理员可以进入，客户无法修改菜单</div>
+</div>
+</div>
+
+<script>
+    // ==================== 配置 ====================
+    const ADMIN_PASSWORD = "8888";  // 👈 你可以修改这个密码
+    const IMGBB_API_KEY = "b34358ca362ee17fbb6ea231d002368e";
+    // =============================================
+
+    let menuData = [];
+    let pendingNewImageUrl = null;
+    let isUploading = false;
+    const STORAGE_KEY = 'restaurant_menu';
+
+    const DEFAULT_MENU = [
+        { id: 1, name: "烤羊肉串", price: 5, category: "🔥 招牌烧烤", img: "https://picsum.photos/id/292/200/150" },
+        { id: 2, name: "烤鸡翅", price: 8, category: "🔥 招牌烧烤", img: "https://picsum.photos/id/291/200/150" },
+        { id: 3, name: "烤茄子", price: 12, category: "🔥 招牌烧烤", img: "https://picsum.photos/id/290/200/150" },
+        { id: 4, name: "烤生蚝", price: 15, category: "🔥 招牌烧烤", img: "https://picsum.photos/id/288/200/150" },
+        { id: 5, name: "拍黄瓜", price: 10, category: "🥗 凉菜小食", img: "https://picsum.photos/id/286/200/150" },
+        { id: 6, name: "毛豆花生", price: 8, category: "🥗 凉菜小食", img: "https://picsum.photos/id/285/200/150" },
+        { id: 7, name: "雪花啤酒", price: 8, category: "🍺 酒水饮料", img: "https://picsum.photos/id/283/200/150" },
+        { id: 8, name: "可乐", price: 5, category: "🍺 酒水饮料", img: "https://picsum.photos/id/282/200/150" }
+    ];
+
+    function checkPassword() {
+        const pwd = document.getElementById('passwordInput').value;
+        if (pwd === ADMIN_PASSWORD) {
+            document.getElementById('loginPanel').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            loadData();
+            renderMenuList();
+        } else {
+            document.getElementById('loginError').innerText = '密码错误，请重试';
+        }
+    }
+
+    function loadData() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            menuData = JSON.parse(stored);
+        } else {
+            menuData = JSON.parse(JSON.stringify(DEFAULT_MENU));
+            saveData();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(menuData));
+    }
+
+    function getNextId() {
+        return menuData.length > 0 ? Math.max(...menuData.map(i => i.id)) + 1 : 1;
+    }
+
+    async function uploadToImgBB(file) {
+        const formData = new FormData();
+        formData.append('image', file);
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.error?.message || '上传失败');
+        }
+        return result.data.url;
+    }
+
+    async function uploadNewImage() {
+        if (isUploading) return;
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const uploadArea = document.getElementById('uploadAreaNew');
+            const statusDiv = document.getElementById('newUploadStatus');
+            isUploading = true;
+            uploadArea.classList.add('uploading');
+            statusDiv.innerHTML = '⏳ 正在上传图片...';
+            try {
+                const imageUrl = await uploadToImgBB(file);
+                pendingNewImageUrl = imageUrl;
+                const previewImg = document.getElementById('newPreviewImg');
+                const previewDiv = document.getElementById('newImgPreview');
+                previewImg.src = imageUrl;
+                previewDiv.style.display = 'flex';
+                statusDiv.innerHTML = '✅ 上传成功！';
+                setTimeout(() => statusDiv.innerHTML = '', 2000);
+            } catch (err) {
+                statusDiv.innerHTML = '❌ 失败：' + err.message;
+            } finally {
+                isUploading = false;
+                uploadArea.classList.remove('uploading');
+            }
+        };
+        input.click();
+    }
+
+    function clearNewImage() {
+        pendingNewImageUrl = null;
+        document.getElementById('newImgPreview').style.display = 'none';
+        document.getElementById('newPreviewImg').src = '';
+        document.getElementById('newUploadStatus').innerHTML = '';
+    }
+
+    async function addItem() {
+        const name = document.getElementById('newName').value.trim();
+        const price = parseFloat(document.getElementById('newPrice').value);
+        const category = document.getElementById('newCategory').value.trim();
+        if (!name || isNaN(price) || !category) {
+            alert("请填写完整信息");
+            return;
+        }
+        let img = pendingNewImageUrl;
+        if (!img) img = "https://picsum.photos/id/1/200/150";
+        menuData.push({ id: getNextId(), name, price, category, img });
+        saveData();
+        renderMenuList();
+        clearAddForm();
+    }
+
+    function clearAddForm() {
+        document.getElementById('newName').value = '';
+        document.getElementById('newPrice').value = '';
+        document.getElementById('newCategory').value = '';
+        clearNewImage();
+    }
+
+    function deleteItem(id) {
+        if (confirm("确定删除？")) {
+            menuData = menuData.filter(item => item.id !== id);
+            saveData();
+            renderMenuList();
+        }
+    }
+
+    function editItem(id, field, newValue) {
+        const item = menuData.find(i => i.id === id);
+        if (item) {
+            if (field === 'price') newValue = parseFloat(newValue);
+            if (field === 'name' && newValue) item.name = newValue;
+            if (field === 'price' && !isNaN(newValue)) item.price = newValue;
+            saveData();
+            renderMenuList();
+        }
+    }
+
+    async function replaceItemImage(id) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const statusDiv = document.getElementById(`img-status-${id}`);
+            if (statusDiv) statusDiv.innerHTML = '⏳ 上传中...';
+            try {
+                const imageUrl = await uploadToImgBB(file);
+                const item = menuData.find(i => i.id === id);
+                if (item) {
+                    item.img = imageUrl;
+                    saveData();
+                    renderMenuList();
+                }
+            } catch (err) {
+                alert('上传失败：' + err.message);
+            }
+        };
+        input.click();
+    }
+
+    function resetToDefault() {
+        if (confirm("恢复默认菜单会丢失当前所有修改，确定吗？")) {
+            menuData = JSON.parse(JSON.stringify(DEFAULT_MENU));
+            saveData();
+            renderMenuList();
+        }
+    }
+
+    function renderMenuList() {
+        const container = document.getElementById('menuList');
+        if (menuData.length === 0) {
+            container.innerHTML = '<div style="color:#aaa; text-align:center;">暂无菜品</div>';
+            return;
+        }
+        let html = '';
+        menuData.forEach(item => {
+            html += `
+                <div class="menu-item">
+                    <img src="${item.img}" onerror="this.src='https://picsum.photos/id/1/200/150'">
+                    <div class="menu-item-info">
+                        <div><strong>${escapeHtml(item.name)}</strong>  |  ¥${item.price}  |  ${escapeHtml(item.category)}</div>
+                        <div style="font-size:10px; opacity:0.6;">${item.img.substring(0, 40)}${item.img.length > 40 ? '...' : ''}</div>
+                        <div id="img-status-${item.id}" style="font-size:11px;"></div>
+                    </div>
+                    <button class="btn-del" onclick="deleteItem(${item.id})">删除</button>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:-5px; margin-bottom:15px; padding-left:10px; flex-wrap:wrap;">
+                    <input type="text" placeholder="新名称" id="edit-name-${item.id}" style="flex:1; font-size:12px; padding:6px;">
+                    <input type="number" placeholder="新价格" id="edit-price-${item.id}" style="width:80px; font-size:12px; padding:6px;">
+                    <button onclick="editItem(${item.id}, 'name', document.getElementById('edit-name-${item.id}').value)">改名称</button>
+                    <button onclick="editItem(${item.id}, 'price', document.getElementById('edit-price-${item.id}').value)">改价格</button>
+                    <button onclick="replaceItemImage(${item.id})" style="background:#557788;">📷 换图</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+</script>
+</body>
+</html>
